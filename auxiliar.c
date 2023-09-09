@@ -14,13 +14,13 @@ int main()
     int A[lA][cA];
     srand((unsigned int)time(NULL));
     gerarMatriz(lA, cA, A);
-    salvarMatriz("matrizA", 'a', lA, cA, A);
+    salvarMatriz("matrizA.txt", 'a', lA, cA, A);
 
     int B[lB][cB];
     sleep(1);
     srand((unsigned int)time(NULL));
     gerarMatriz(lB, cB, B);
-    salvarMatriz("matrizB", 'b', lB, cB, B);
+    salvarMatriz("matrizB.txt", 'b', lB, cB, B);
 
     return 0;
 }
