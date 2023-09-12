@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
 void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
 
     double decorrido = (double)(fim - inicio) / CLOCKS_PER_SEC;
 
-    salvarMatrizResultado("matrizR", 'r', lA, cB, R, decorrido);
+    salvarMatrizResultado("matrizR.txt", 'r', lA, cB, R, decorrido);
 
     return 0;
 }
@@ -57,16 +58,26 @@ int main(int argc, char *argv[])
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna])
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
-    fseek(arquivo, 4, SEEK_CUR);
-    for (int i = 0; i < linha; i++)
+    char linhaArq[50];
+    fgets(linhaArq, 50, arquivo);
+    for (int i = 0; i < linha && !feof(arquivo); i++)
     {
         for (int j = 0; j < coluna; j++)
         {
-            fseek(arquivo, 4, SEEK_CUR);
-            fscanf(arquivo, "%d", &matriz[i][j]);
-            fseek(arquivo, 1, SEEK_CUR);
+            int numeroLinha;
+            fgets(linhaArq, 50, arquivo);
+            sscanf(linhaArq, "%*s %d", &numeroLinha);
+            matriz[i][j] = numeroLinha;
         }
     }
+    /*for (int i = 0; i < linha; i++)
+    {
+        for (int j = 0; j < coluna; j++)
+        {
+            printf("%d ", matriz[i][j]);
+        }
+        printf("\n");
+    }*/
 
     fclose(arquivo);
 }
