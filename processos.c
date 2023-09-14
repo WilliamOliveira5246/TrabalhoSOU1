@@ -3,6 +3,7 @@
 #include <time.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <sys/wait.h>
 
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
 void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
@@ -64,7 +65,6 @@ int main(int argc, char *argv[])
     {
         __pid_t pid;
         pid = fork();
-        // multiplicarMatrizes(qntElementos, posicao, i, lA, cA, cB, A, B, R);
         if (pid < 0)
         {
             printf("Erro ao criar o filho");
@@ -72,8 +72,9 @@ int main(int argc, char *argv[])
         else if (pid == 0)
         {
             multiplicarMatrizes(qntElementos, posicao, i, lA, cA, cB, A, B, R);
-            return 0;
+            _exit(0);
         }
+        wait(NULL);
     }
 }
 
@@ -105,7 +106,6 @@ void multiplicarMatrizes(int qntElementos, int posicao[], int index, int lA, int
         }
         for (int j = posicao[1]; j < cB && controleQntElementos < qntElementos; j++)
         {
-            int numero = 0;
             for (int k = 0; k < cA; k++)
             {
                 r[i][j] += a[i][k] * b[k][j];
