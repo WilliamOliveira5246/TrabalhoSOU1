@@ -1,21 +1,15 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
-
-typedef struct {
-    int linha;
-    int coluna;
-    int **dados;
-} Matrizes;
+#include <math.h>
 
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
-void multiplicarMatrizes(int qntElementos, int posicao[], int index, int lA, int cA, int cB, int a[][cA], int b[][cB], int r[][cB]);
-Matrizes* criarMatrizesEmStruct(int linhas, int colunas, int qntFilhos);
-void liberarMatrizEmStruct(Matrizes *matriz);
+void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int matriz[][coluna], double tempo);
+int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int matB[][cB]);
 
 int main(int argc, char *argv[])
 {
@@ -43,33 +37,44 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    int A[lA][cA];
-    int B[lB][cB];
-
-    lerESalvarMatriz("matrizA.txt", lA, cA, A);
-    lerESalvarMatriz("matrizB.txt", lB, cB, B);
-
     int qntElementos = 0;
     printf("Digite a quantidade de elementos por processo: ");
     scanf("%d", &qntElementos);
 
-    int qntFilhos = (lA * cB) / qntElementos;
+    int A[lA][cA];
+    int B[lB][cB];
+    int R[lA][cB];
+
+    zerarMatriz(lA, cB, R);
+    lerESalvarMatriz("matrizA.txt", lA, cA, A);
+    lerESalvarMatriz("matrizB.txt", lB, cB, B);
+
+    fclose(arquivoMatrizA);
+    fclose(arquivoMatrizB);
+
+    double auxF = (double)(lA * cB) / qntElementos;
+    int qntFilhos = (int)ceil(auxF);
     if (qntFilhos == 0)
     {
         qntFilhos++;
     }
 
-    Matrizes *matrizes = criarMatrizesEmStruct(lA, cB, qntFilhos);
 
-    int seg_id = shmget(IPC_PRIVATE, 2 * sizeof(int), IPC_CREAT | 0666);
-    int *posicao = shmat(seg_id, NULL, 0);
-    posicao[0] = 0;
-    posicao[1] = 0;
-    int status;
-
-    for (int i = 0; i < qntFilhos; i++)
+    int posicaoInicial[] = {0, 0};
+    int posicaoFinal[] = {0, 0};
+    for (int qntFilhosLaco = 0; qntFilhosLaco < qntFilhos; qntFilhosLaco++)
     {
-        __pid_t pid;
+        int aux = (posicaoInicial[0] * cB + posicaoInicial[1]) + qntElementos;
+        if (aux > lA * cA)
+        {
+            aux = (lA * cB);
+        }
+        posicaoFinal[0] = aux / cB;
+        posicaoFinal[1] = aux % cB;
+
+        printf("%d %d\n", posicaoFinal[0], posicaoFinal[1]);
+
+        pid_t pid;
         pid = fork();
         if (pid < 0)
         {
@@ -77,56 +82,48 @@ int main(int argc, char *argv[])
         }
         else if (pid == 0)
         {
-            multiplicarMatrizes(qntElementos, posicao, i, lA, cA, cB, A, B, matrizes[i].dados);
-            exit(0);
+            clock_t inicio = clock();
+            char nomeArquivo[1000];
+            sprintf(nomeArquivo, "./matrizesProcessos/matrizResultadoProcesso %d .txt", qntFilhosLaco);
+            for (int i = posicaoInicial[0]; i < posicaoFinal[0] && i < lA; i++)
+            {
+                for (int j = posicaoInicial[1]; j < cB; j++)
+                {
+                    if (i == posicaoFinal[0] && j < posicaoFinal[1])
+                    {
+                        j = cB;
+                    }
+                    else
+                    {
+                        R[i][j] = multiplicar(cA, cB, i, j, A, B);
+                        //printf("%d ", R[i][j]);
+                    }
+                }
+                printf("\n");
+            }
+            clock_t fim = clock();
+            double decorrido = (double)(fim - inicio) / CLOCKS_PER_SEC;
+            salvarMatrizResultado(nomeArquivo, 'r', lA, cB, R, decorrido);
+            _exit(0);
         }
+
+        posicaoInicial[0] = posicaoFinal[0];
+        posicaoInicial[1] = posicaoFinal[1];
+    }
+    for(int i = 0; i < qntFilhos; i++){
         wait(NULL);
     }
-
-    //estratégia para aguardar todos os processos filhos terminarem
-    for (int i = 0; i < qntFilhos; i++)
-    {
-        wait(NULL);
-    }
-    
-    for (int i = 0; i < qntFilhos; i++)
-    {
-        liberarMatrizEmStruct(&matrizes[i]);
-    }
-    shmdt(posicao);
-    shmctl(seg_id, IPC_RMID, NULL);
-
-    return 0;
 }
 
-void multiplicarMatrizes(int qntElementos, int posicao[], int index, int lA, int cA, int cB, int a[][cA], int b[][cB], int r[][cB])
+void zerarMatriz(int linha, int coluna, int matriz[][coluna])
 {
-    clock_t inicio = clock();
-    int controleQntElementos = 0;
-    char nomeArquivo[1000];
-    sprintf(nomeArquivo, "matrizResultadoProcesso %d.txt", index);
-    int i = posicao[0];
-    while (i < lA && controleQntElementos < qntElementos)
+    for (int i = 0; i < linha; i++)
     {
-        if (posicao[1] == cB)
+        for (int j = 0; j < coluna; j++)
         {
-            posicao[1] = 0;
-            posicao[0]++;
-            i++;
-        }
-        for (int j = posicao[1]; j < cB && controleQntElementos < qntElementos; j++)
-        {
-            for (int k = 0; k < cA; k++)
-            {
-                r[i][j] += a[i][k] * b[k][j];
-            }
-            controleQntElementos++;
-            posicao[1]++;
+            matriz[i][j] = 0;
         }
     }
-    clock_t fim = clock();
-    double decorrido = (double)(fim - inicio) / CLOCKS_PER_SEC;
-    salvarMatrizResultado(nomeArquivo, 'r', lA, cB, r, decorrido);
 }
 
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna])
@@ -169,34 +166,12 @@ int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, i
     return 0;
 }
 
-Matrizes* criarMatrizesEmStruct(int linhas, int colunas, int qntFilhos) {
-    Matrizes *matrizes = (Matrizes *)malloc(sizeof(Matrizes) * qntFilhos);
-    for (int i = 0; i < qntFilhos; i++) {
-        matrizes[i].linha = linhas;
-        matrizes[i].coluna = colunas;
-
-        matrizes[i].dados = (int **)malloc(sizeof(int *) * linhas);
-        for (int j = 0; j < linhas; j++) {
-            matrizes[i].dados[j] = (int *)malloc(sizeof(int) * colunas);
-        }
-
-        zerarMatrizEmStruct(&matrizes[i]);
+int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int matB[][cB])
+{
+    int resultado = 0;
+    for (int i = 0; i < cA; i++)
+    {
+        resultado += matA[linhaR][i] * matB[i][colunaR];
     }
-    return matrizes;
-}
-
-void zerarMatrizEmStruct(Matrizes *matriz) {
-    for (int i = 0; i < matriz->linha; i++) {
-        for (int j = 0; j < matriz->coluna; j++) {
-            matriz->dados[i][j] = 0;
-        }
-    }
-}
-
-void liberarMatrizEmStruct(Matrizes *matriz) {
-    for (int i = 0; i < matriz->linha; i++) {
-        free(matriz->dados[i]);
-    }
-    free(matriz->dados);
-    free(matriz);
+    return resultado;
 }
