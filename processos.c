@@ -71,9 +71,6 @@ int main(int argc, char *argv[])
         posicaoFinal[0] = aux / cB;
         posicaoFinal[1] = aux % cB;
 
-        //printf("PosicaoInicial: %d, %d\n", posicaoInicial[0], posicaoInicial[1]);
-        //printf("PosicaoFinal: %d, %d\n", posicaoFinal[0], posicaoFinal[1]);
-
         pid_t pid;
         pid = fork();
         if (pid < 0)
@@ -84,7 +81,6 @@ int main(int argc, char *argv[])
         {
             clock_t inicio = clock();
             char nomeArquivo[255];
-            //sprintf(nomeArquivo, "./matrizesProcessos/matrizResultadoProcesso %d .txt", qntFilhosLaco);
             sprintf(nomeArquivo, "./matrizResultadoProcesso %d .txt", qntFilhosLaco);
             for (int i = posicaoInicial[0]; i <= posicaoFinal[0] && i < lA; i++)
             {
@@ -93,7 +89,6 @@ int main(int argc, char *argv[])
                     for (int j = posicaoInicial[1]; j < cB; j++)
                     {
                         R[i][j] = multiplicar(cA, cB, i, j, A, B);
-                        // printf("%d ", R[i][j]);
                     }
                     posicaoInicial[1] = 0;
                 }
@@ -102,18 +97,14 @@ int main(int argc, char *argv[])
                     for (int j = posicaoInicial[1]; j < posicaoFinal[1]; j++)
                     {
                         R[i][j] = multiplicar(cA, cB, i, j, A, B);
-                        // printf("%d ", R[i][j]);
                     }
                 }
-
-                printf("\n");
             }
             clock_t fim = clock();
             double decorrido = (double)(fim - inicio) / CLOCKS_PER_SEC;
             salvarMatrizResultado(nomeArquivo, 'r', lA, cB, R, decorrido);
             _exit(0);
         }
-        wait(NULL);
         posicaoInicial[0] = posicaoFinal[0];
         posicaoInicial[1] = posicaoFinal[1];
     }
