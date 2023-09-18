@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
                     }
                     posicaoInicial[1] = 0;
                 }
-                else
+                else if (i == posicaoFinal[0])
                 {
                     for (int j = posicaoInicial[1]; j < posicaoFinal[1]; j++)
                     {
