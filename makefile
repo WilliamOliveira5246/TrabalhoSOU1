@@ -9,7 +9,7 @@ sequencial:
 	./sequencial matrizA.txt matrizB.txt
 
 processos:
-	gcc processos.c -o processos
+	gcc processos.c -o processos -lm
 	./processos matrizA.txt matrizB.txt
 
 clean:
