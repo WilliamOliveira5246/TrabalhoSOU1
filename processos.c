@@ -59,7 +59,6 @@ int main(int argc, char *argv[])
         qntFilhos++;
     }
 
-
     int posicaoInicial[] = {0, 0};
     int posicaoFinal[] = {0, 0};
     for (int qntFilhosLaco = 0; qntFilhosLaco < qntFilhos; qntFilhosLaco++)
@@ -72,7 +71,8 @@ int main(int argc, char *argv[])
         posicaoFinal[0] = aux / cB;
         posicaoFinal[1] = aux % cB;
 
-        printf("%d %d\n", posicaoFinal[0], posicaoFinal[1]);
+        //printf("PosicaoInicial: %d, %d\n", posicaoInicial[0], posicaoInicial[1]);
+        //printf("PosicaoFinal: %d, %d\n", posicaoFinal[0], posicaoFinal[1]);
 
         pid_t pid;
         pid = fork();
@@ -83,22 +83,29 @@ int main(int argc, char *argv[])
         else if (pid == 0)
         {
             clock_t inicio = clock();
-            char nomeArquivo[1000];
-            sprintf(nomeArquivo, "./matrizesProcessos/matrizResultadoProcesso %d .txt", qntFilhosLaco);
-            for (int i = posicaoInicial[0]; i < posicaoFinal[0] && i < lA; i++)
+            char nomeArquivo[255];
+            //sprintf(nomeArquivo, "./matrizesProcessos/matrizResultadoProcesso %d .txt", qntFilhosLaco);
+            sprintf(nomeArquivo, "./matrizResultadoProcesso %d .txt", qntFilhosLaco);
+            for (int i = posicaoInicial[0]; i <= posicaoFinal[0] && i < lA; i++)
             {
-                for (int j = posicaoInicial[1]; j < cB; j++)
+                if (i < posicaoFinal[0])
                 {
-                    if (i == posicaoFinal[0] && j < posicaoFinal[1])
-                    {
-                        j = cB;
-                    }
-                    else
+                    for (int j = posicaoInicial[1]; j < cB; j++)
                     {
                         R[i][j] = multiplicar(cA, cB, i, j, A, B);
-                        //printf("%d ", R[i][j]);
+                        // printf("%d ", R[i][j]);
+                    }
+                    posicaoInicial[1] = 0;
+                }
+                else
+                {
+                    for (int j = posicaoInicial[1]; j < posicaoFinal[1]; j++)
+                    {
+                        R[i][j] = multiplicar(cA, cB, i, j, A, B);
+                        // printf("%d ", R[i][j]);
                     }
                 }
+
                 printf("\n");
             }
             clock_t fim = clock();
@@ -106,11 +113,12 @@ int main(int argc, char *argv[])
             salvarMatrizResultado(nomeArquivo, 'r', lA, cB, R, decorrido);
             _exit(0);
         }
-
+        wait(NULL);
         posicaoInicial[0] = posicaoFinal[0];
         posicaoInicial[1] = posicaoFinal[1];
     }
-    for(int i = 0; i < qntFilhos; i++){
+    for (int i = 0; i < qntFilhos; i++)
+    {
         wait(NULL);
     }
 }
