@@ -5,11 +5,21 @@
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <math.h>
+#include <stdlib.h>
+
+typedef struct {
+    int linha;
+    int coluna;
+    int **dados;
+} Matrizes;
 
 void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
 void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int matriz[][coluna], double tempo);
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int** matriz, double tempo);
 int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int matB[][cB]);
+Matrizes *criarMatrizesEmStruct(int linhas, int colunas, int qntFilhos);
+void zerarMatrizEmStruct(Matrizes *matriz);
+void liberarMatrizEmStruct(Matrizes *matriz);
 
 int main(int argc, char *argv[])
 {
@@ -59,6 +69,8 @@ int main(int argc, char *argv[])
         qntFilhos++;
     }
 
+    Matrizes *matrizes = criarMatrizesEmStruct(lA, cB, qntFilhos);
+
     int posicaoInicial[] = {0, 0};
     int posicaoFinal[] = {0, 0};
     for (int qntFilhosLaco = 0; qntFilhosLaco < qntFilhos; qntFilhosLaco++)
@@ -88,7 +100,7 @@ int main(int argc, char *argv[])
                 {
                     for (int j = posicaoInicial[1]; j < cB; j++)
                     {
-                        R[i][j] = multiplicar(cA, cB, i, j, A, B);
+                        matrizes[qntFilhosLaco].dados[i][j] = multiplicar(cA, cB, i, j, A, B);
                     }
                     posicaoInicial[1] = 0;
                 }
@@ -96,13 +108,13 @@ int main(int argc, char *argv[])
                 {
                     for (int j = posicaoInicial[1]; j < posicaoFinal[1]; j++)
                     {
-                        R[i][j] = multiplicar(cA, cB, i, j, A, B);
+                        matrizes[qntFilhosLaco].dados[i][j] = multiplicar(cA, cB, i, j, A, B);
                     }
                 }
             }
             clock_t fim = clock();
             double decorrido = (double)(fim - inicio) / CLOCKS_PER_SEC;
-            salvarMatrizResultado(nomeArquivo, 'r', lA, cB, R, decorrido);
+            salvarMatrizResultado(nomeArquivo, 'r', lA, cB, matrizes[qntFilhosLaco].dados, decorrido);
             _exit(0);
         }
         posicaoInicial[0] = posicaoFinal[0];
@@ -143,7 +155,7 @@ void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz
     fclose(arquivo);
 }
 
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int matriz[][coluna], double tempo)
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int** matriz, double tempo)
 {
     FILE *arquivo = fopen(nomeArquivo, "w");
     if (arquivo == NULL)
@@ -173,4 +185,44 @@ int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int mat
         resultado += matA[linhaR][i] * matB[i][colunaR];
     }
     return resultado;
+}
+
+Matrizes *criarMatrizesEmStruct(int linhas, int colunas, int qntFilhos)
+{
+    Matrizes *matrizes = (Matrizes *)malloc(sizeof(Matrizes) * qntFilhos);
+    for (int i = 0; i < qntFilhos; i++)
+    {
+        matrizes[i].linha = linhas;
+        matrizes[i].coluna = colunas;
+
+        matrizes[i].dados = (int **)malloc(sizeof(int *) * linhas);
+        for (int j = 0; j < linhas; j++)
+        {
+            matrizes[i].dados[j] = (int *)malloc(sizeof(int) * colunas);
+        }
+
+        zerarMatrizEmStruct(&matrizes[i]);
+    }
+    return matrizes;
+}
+
+void zerarMatrizEmStruct(Matrizes *matriz)
+{
+    for (int i = 0; i < matriz->linha; i++)
+    {
+        for (int j = 0; j < matriz->coluna; j++)
+        {
+            matriz->dados[i][j] = 0;
+        }
+    }
+}
+
+void liberarMatrizEmStruct(Matrizes *matriz)
+{
+    for (int i = 0; i < matriz->linha; i++)
+    {
+        free(matriz->dados[i]);
+    }
+    free(matriz->dados);
+    free(matriz);
 }

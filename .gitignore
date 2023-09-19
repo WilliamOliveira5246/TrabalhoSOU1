@@ -8,3 +8,8 @@ matrizesProcessos
 auxiliar
 processos
 sequencial
+/matrizResultadoProcesso 0 .txt
+/matrizResultadoProcesso 2 .txt
+/matrizResultadoProcesso 1 .txt
+/matrizResultadoProcesso 3 .txt
+/matrizResultadoProcesso 4 .txt
