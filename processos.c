@@ -7,19 +7,22 @@
 #include <math.h>
 #include <stdlib.h>
 
-typedef struct {
+typedef struct
+{
     int linha;
     int coluna;
     int **dados;
 } Matrizes;
 
-void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
-void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int** matriz, double tempo);
-int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int matB[][cB]);
+void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int **matriz);
+void zerarMatriz(int **matriz, int linhas, int colunas);
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int **matriz, double tempo);
+int multiplicar(int cA, int cB, int linhaR, int colunaR, int **matA, int **matB);
 Matrizes *criarMatrizesEmStruct(int linhas, int colunas, int qntFilhos);
 void zerarMatrizEmStruct(Matrizes *matriz);
 void liberarMatrizEmStruct(Matrizes *matriz);
+int **alocacaoDinamica(int linhas, int colunas);
+void liberarMatriz(int **matriz, int linhas);
 
 int main(int argc, char *argv[])
 {
@@ -47,23 +50,24 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    int qntElementos = 0;
-    printf("Digite a quantidade de elementos por processo: ");
-    scanf("%d", &qntElementos);
+    int **A = alocacaoDinamica(lA, cA);
+    int **B = alocacaoDinamica(lB, cB);
+    int **R = alocacaoDinamica(lA, cB);
 
-    int A[lA][cA];
-    int B[lB][cB];
-    int R[lA][cB];
+    zerarMatriz(R, lA, cB);
+    zerarMatriz(A, lA, cA);
+    zerarMatriz(B, lB, cB);
 
-    zerarMatriz(lA, cB, R);
     lerESalvarMatriz("matrizA.txt", lA, cA, A);
     lerESalvarMatriz("matrizB.txt", lB, cB, B);
 
     fclose(arquivoMatrizA);
     fclose(arquivoMatrizB);
 
-    double auxF = (double)(lA * cB) / qntElementos;
-    int qntFilhos = (int)ceil(auxF);
+    float p = (float)lA * cB / 8;
+    int qntElementos = (int)ceil(p);
+    int qntFilhos = (int)lA * cB / p;
+
     if (qntFilhos == 0)
     {
         qntFilhos++;
@@ -124,20 +128,23 @@ int main(int argc, char *argv[])
     {
         wait(NULL);
     }
+    liberarMatriz(A, lA);
+    liberarMatriz(B, lB);
+    liberarMatriz(R, lA);
 }
 
-void zerarMatriz(int linha, int coluna, int matriz[][coluna])
+void zerarMatriz(int **matriz, int linhas, int colunas)
 {
-    for (int i = 0; i < linha; i++)
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j = 0; j < coluna; j++)
+        for (int j = 0; j < colunas; j++)
         {
             matriz[i][j] = 0;
         }
     }
 }
 
-void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna])
+void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int **matriz)
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
     char linhaArq[50];
@@ -155,7 +162,7 @@ void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz
     fclose(arquivo);
 }
 
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int** matriz, double tempo)
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int **matriz, double tempo)
 {
     FILE *arquivo = fopen(nomeArquivo, "w");
     if (arquivo == NULL)
@@ -177,7 +184,7 @@ int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, i
     return 0;
 }
 
-int multiplicar(int cA, int cB, int linhaR, int colunaR, int matA[][cA], int matB[][cB])
+int multiplicar(int cA, int cB, int linhaR, int colunaR, int **matA, int **matB)
 {
     int resultado = 0;
     for (int i = 0; i < cA; i++)
@@ -224,5 +231,24 @@ void liberarMatrizEmStruct(Matrizes *matriz)
         free(matriz->dados[i]);
     }
     free(matriz->dados);
+    free(matriz);
+}
+
+int **alocacaoDinamica(int linhas, int colunas)
+{
+    int **matriz = (int **)malloc(linhas * sizeof(int *));
+    for (int i = 0; i < linhas; i++)
+    {
+        matriz[i] = (int *)malloc(colunas * sizeof(int));
+    }
+    return matriz;
+}
+
+void liberarMatriz(int **matriz, int linhas)
+{
+    for (int i = 0; i < linhas; i++)
+    {
+        free(matriz[i]);
+    }
     free(matriz);
 }

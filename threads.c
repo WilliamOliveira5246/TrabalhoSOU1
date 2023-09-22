@@ -77,14 +77,13 @@ int main(int argc, char *argv[])
     for (int i = 0; i < qntFilhos; i++)
     {
         int auxiliar = (int)(posicaoInicial[0] * colunasB + posicaoInicial[1]) + qntElementos;
-        if (auxiliar > linhasA * colunasA)
+        if (auxiliar > linhasA * colunasB)
         {
             auxiliar = (linhasA * colunasB);
         }
         posicaoFinal[0] = auxiliar / colunasB;
         posicaoFinal[1] = auxiliar % colunasB;
 
-        printf("--%d %d %d--\n", posicaoInicial[0], posicaoInicial[1], i);
         struct Parametros parametros = {linhasA, colunasA, linhasB, colunasB, matrizA, matrizB, matrizR, i, posicaoInicial[0], posicaoInicial[1], posicaoFinal[0], posicaoFinal[1]};
 
         int status = pthread_create(&tid[i], NULL, threadFuncao, (void *)&parametros);
@@ -99,22 +98,7 @@ int main(int argc, char *argv[])
         posicaoInicial[1] = posicaoFinal[1];
     }
 
-    for (int i = 0; i < qntFilhos; i++)
-    {
-        pthread_join(tid[i], &thread_return[i]);
-    }
-
-    printf("\nMatriz\n");
-    for (int i = 0; i < linhasA; i++)
-    {
-        for (int j = 0; j < colunasB; j++)
-        {
-            printf("%d ", matrizR[i][j]);
-        }
-        printf("--\n");
-    }
-
-        liberarMatriz(matrizA, linhasA);
+    liberarMatriz(matrizA, linhasA);
     liberarMatriz(matrizB, linhasB);
     liberarMatriz(matrizR, linhasA);
     return 0;
@@ -126,7 +110,6 @@ void *threadFuncao(void *arg)
     struct Parametros *parametros = (struct Parametros *)arg;
     char nomeArquivo[255];
     sprintf(nomeArquivo, "./matrizResultadoThread %d .txt", parametros->filho);
-    printf("/%d %d %d\n", parametros->linhaInicial, parametros->colunaInicial, parametros->filho);
     for (int i = parametros->linhaInicial; i <= parametros->linhaFinal && i < parametros->linhasA; i++)
     {
         if (i < parametros->linhaFinal)

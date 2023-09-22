@@ -3,10 +3,12 @@
 #include <time.h>
 #include <string.h>
 
-void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna]);
-void zerarMatriz(int linha, int coluna, int matriz[][coluna]);
-void multiplicarMatrizes(int lA, int cA, int cB, int A[][cA], int B[][cB], int (*R)[cB]);
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int matriz[][coluna], double tempo);
+void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int **matriz);
+void zerarMatriz(int **matriz, int linhas, int colunas);
+void multiplicarMatrizes(int lA, int cA, int cB, int **A, int **B, int **R);
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int **matriz, double tempo);
+int **alocacaoDinamica(int linhas, int colunas);
+void liberarMatriz(int **matriz, int linhas);
 
 int main(int argc, char *argv[])
 {
@@ -36,11 +38,14 @@ int main(int argc, char *argv[])
         return 3;
     }
 
-    int A[lA][cA];
-    int B[lB][cB];
-    int R[lA][cB];
+    int **A = alocacaoDinamica(lA, cA);
+    int **B = alocacaoDinamica(lB, cB);
+    int **R = alocacaoDinamica(lA, cB);
 
-    zerarMatriz(lA, cB, R);
+    zerarMatriz(R, lA, cB);
+    zerarMatriz(A, lA, cA);
+    zerarMatriz(B, lB, cB);
+
     lerESalvarMatriz("matrizA.txt", lA, cA, A);
     lerESalvarMatriz("matrizB.txt", lB, cB, B);
 
@@ -52,10 +57,14 @@ int main(int argc, char *argv[])
 
     salvarMatrizResultado("matrizR.txt", 'r', lA, cB, R, decorrido);
 
+    liberarMatriz(A, lA);
+    liberarMatriz(B, lB);
+    liberarMatriz(R, lA);
+
     return 0;
 }
 
-void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz[][coluna])
+void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int **matriz)
 {
     FILE *arquivo = fopen(nomeArquivo, "r");
     char linhaArq[50];
@@ -70,30 +79,22 @@ void lerESalvarMatriz(const char *nomeArquivo, int linha, int coluna, int matriz
             matriz[i][j] = numeroLinha;
         }
     }
-    /*for (int i = 0; i < linha; i++)
-    {
-        for (int j = 0; j < coluna; j++)
-        {
-            printf("%d ", matriz[i][j]);
-        }
-        printf("\n");
-    }*/
 
     fclose(arquivo);
 }
 
-void zerarMatriz(int linha, int coluna, int matriz[][coluna])
+void zerarMatriz(int **matriz, int linhas, int colunas)
 {
-    for (int i = 0; i < linha; i++)
+    for (int i = 0; i < linhas; i++)
     {
-        for (int j = 0; j < coluna; j++)
+        for (int j = 0; j < colunas; j++)
         {
             matriz[i][j] = 0;
         }
     }
 }
 
-void multiplicarMatrizes(int lA, int cA, int cB, int A[][cA], int B[][cB], int (*R)[cB])
+void multiplicarMatrizes(int lA, int cA, int cB, int **A, int **B, int **R)
 {
     for (int i = 0; i < lA; i++)
     {
@@ -107,7 +108,7 @@ void multiplicarMatrizes(int lA, int cA, int cB, int A[][cA], int B[][cB], int (
     }
 }
 
-int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int matriz[][coluna], double tempo)
+int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, int coluna, int **matriz, double tempo)
 {
     FILE *arquivo = fopen(nomeArquivo, "w");
     if (arquivo == NULL)
@@ -127,4 +128,23 @@ int salvarMatrizResultado(const char *nomeArquivo, char nomeMatriz, int linha, i
 
     fclose(arquivo);
     return 0;
+}
+
+int **alocacaoDinamica(int linhas, int colunas)
+{
+    int **matriz = (int **)malloc(linhas * sizeof(int *));
+    for (int i = 0; i < linhas; i++)
+    {
+        matriz[i] = (int *)malloc(colunas * sizeof(int));
+    }
+    return matriz;
+}
+
+void liberarMatriz(int **matriz, int linhas)
+{
+    for (int i = 0; i < linhas; i++)
+    {
+        free(matriz[i]);
+    }
+    free(matriz);
 }
