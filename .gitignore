@@ -14,3 +14,15 @@ sequencial
 /matrizResultadoProcesso 3 .txt
 /matrizResultadoProcesso 4 .txt
 threads
+matrizResultadoProcesso 5 .txt
+matrizResultadoProcesso 6 .txt
+matrizResultadoProcesso 7 .txt
+matrizResultadoThread 0 .txt
+matrizResultadoThread 1 .txt
+.gitignore
+matrizResultadoThread 7 .txt
+matrizResultadoThread 6 .txt
+matrizResultadoThread 5 .txt
+matrizResultadoThread 4 .txt
+matrizResultadoThread 2 .txt
+matrizResultadoThread 3 .txt
